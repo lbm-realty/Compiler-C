@@ -4,6 +4,7 @@
 
 #include "front.h"
 #include "parser.h"
+#include "parser.c"
 
 int nextToken;
 char secondChar;
@@ -32,7 +33,7 @@ int main(int argc, char *argv[])
         do
         {
             lex();
-            expr();
+            start();
         } while (nextToken != EOF);
     }
 
