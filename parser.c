@@ -1,16 +1,30 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdlib.h>
 
 #include "parser.h"
 #include "front.h"
 
 void variable();
 void const_condition();
-
 static void error();
+int start();
 
-void start()
+extern int line;
+extern char lexeme[100];
+
+void success() {
+    int result = start();
+    if (result == 0)
+        printf("Syntax Validated\n");
+
+    else {
+        error();
+    }
+}
+
+int start()
 {
     switch (nextToken)
     {
@@ -20,9 +34,13 @@ void start()
         {
             expr();
             if (nextToken == SEMICOLON)
-                printf("Parsed Sucessfully\n");
-            else
-                error();
+            {
+                printf("Syntax Validated\n");
+                return 1;
+
+            }
+            else error();
+            // break;
         }
     case KEY_IN:
         lex();
@@ -30,9 +48,13 @@ void start()
         {
             variable();
             if (nextToken == SEMICOLON)
-                printf("Parsed Sucessfully\n");
+            {
+                printf("Syntax Validated\n");
+                return 1;
+            }
             else
                 error();
+            // break;
         }
     case KEY_OUT:
         lex();
@@ -40,50 +62,84 @@ void start()
         {
             expr();
             if (nextToken == SEMICOLON)
-                printf("Parsed Successfully\n");
+            {
+                printf("Syntax Validated\n");
+                return 1;
+            }
             else
                 error();
+            // break;
         }
     case KEY_IF:
         lex();
-        if (nextToken == OPEN_PAREN) {
+        if (nextToken == OPEN_PAREN)
+        {
             const_condition();
             lex();
-            if (nextToken == CLOSE_PAREN) {
+            if (nextToken == CLOSE_PAREN)
+            {
                 lex();
-                if (nextToken == OPEN_CURL) {
+                if (nextToken == OPEN_CURL)
+                {
                     start();
                     lex();
-                    if (nextToken == CLOSE_CURL) {
+                    if (nextToken == CLOSE_CURL)
+                    {
                         lex();
-                        if (nextToken == KEY_ELSE) {
+                        if (nextToken == KEY_ELSE)
+                        {
                             lex();
-                            if (nextToken == OPEN_CURL) {
+                            if (nextToken == OPEN_CURL)
+                            {
                                 lex();
                                 start();
                                 lex();
-                                if (nextToken == CLOSE_CURL) {
-                                    printf("Succesfully Parsed\n");
+                                if (nextToken == CLOSE_CURL)
+                                {
+                                    printf("Syntax Validated\n");
+                                    return 1;
                                 }
-                                else error();
-                            } else error();
-                        } else {
-                            // Checking is the nextTokenn after if () {} '}' this is blank or not
-                            // Because the if condition can either end or have an else block, no other thing
-                            char* next = tokenName(nextToken); 
-                            if (isblank(next[0]) || isspace(next[0])) {
-                                break;
+                                else
+                                    error();
+                                // break;
                             }
-                            else error();
+                            else
+                                error();
+                            // break;
                         }
-                    } else error();
-                } else error();
-            } else error();
-        } else error();
-        // Another case is needed for S S, keep in mind
+                        else
+                        {
+                            char *next = tokenName(nextToken);
+                            if (isblank(next[0]) || isspace(next[0]))
+                            {
+                                return 1;
+                            }
+                            else
+                                error();
+                            // break;
+                        }
+                    }
+                    else
+                        error();
+                    // break;
+                }
+                else
+                    error();
+                // break;
+            }
+            else
+                error();
+            // break;
+        }
+        else
+            error();
+        // break;
+
+        while (nextToken != EOF && nextToken != CLOSE_CURL)
+        {
+            expr();
+        }
     }
-
-
 }
 
 /* expr
@@ -96,19 +152,6 @@ void expr()
     lex();
     term();
 
-    // switch(nextToken) {
-    //     case IDENT:
-    //         lex();
-    //         if (nextToken == SUB_OP || nextToken == ADD_OP)
-    //             expr();
-    //         else if (nextToken == SEMICOLON) printf("Successfully parsed\n");
-    //     case INT_LIT:
-    //         lex();
-    //         if (nextToken == SUB_OP || nextToken == ADD_OP || nextToken == MULT_OP || nextToken == DIV_OP || nextToken == MOD_OP)
-    //             expr();
-    //         else if (nextToken == SEMICOLON) printf("Successfully parsed\n");
-    // }
-
     /* As long as the next token is + or -, get
     the next token and parse the next term */
     while (nextToken == ADD_OP || nextToken == SUB_OP)
@@ -117,7 +160,7 @@ void expr()
         term();
     }
 
-    printf("Exit <expr>\n");
+    // printf("Exit <expr>\n");
 } /* End of function expr */
 
 void const_condition()
@@ -127,17 +170,19 @@ void const_condition()
     {
     case IDENT:
         expr();
-        if (nextToken == LESSER_OP || nextToken == GREATER_OP || nextToken == EQUAL_OP || 
-            nextToken == NEQUAL_OP || nextToken == LEQUAL_OP || nextToken == GEQUAL_OP )
+        if (nextToken == LESSER_OP || nextToken == GREATER_OP || nextToken == EQUAL_OP ||
+            nextToken == NEQUAL_OP || nextToken == LEQUAL_OP || nextToken == GEQUAL_OP)
         {
             expr();
             if (nextToken == SEMICOLON)
                 printf("Parsed Successfully\n");
             else
                 error();
+            // break;
         }
         else
             error();
+        // break;
     case OPEN_PAREN:
         const_condition();
         if (nextToken == CLOSE_PAREN)
@@ -147,31 +192,32 @@ void const_condition()
                 printf("Parsed Successfully\n");
             else
                 error();
+            // break;
         }
         else
         {
             error();
-            return;
+            // break;
         }
     }
-    while (nextToken == BOOL_AND || nextToken == BOOL_OR) {
+    while (nextToken == BOOL_AND || nextToken == BOOL_OR)
+    {
         lex();
         expr();
 
-        switch(nextToken) {
-            case LESSER_OP:
-            case GREATER_OP:
-            case EQUAL_OP:
-            case NEQUAL_OP:
-            case LEQUAL_OP:
-            case GEQUAL_OP:
-                lex();
-                expr();
-                break;
-
+        switch (nextToken)
+        {
+        case LESSER_OP:
+        case GREATER_OP:
+        case EQUAL_OP:
+        case NEQUAL_OP:
+        case LEQUAL_OP:
+        case GEQUAL_OP:
+            lex();
+            expr();
+            break;
         }
     }
-
 }
 
 void variable()
@@ -186,11 +232,12 @@ void variable()
         else
         {
             error();
-            return;
+            // return;
         }
     }
     else
         error();
+    // return;
 
     // Now we just have two steps left
     // We are at the alphabet now that's usually inside the parenthesis input (n), in this case n
@@ -207,12 +254,12 @@ void term()
     factor();
     /* As long as the next token is * or /, get the
     next token and parse the next factor */
-    while (nextToken == MULT_OP || nextToken == DIV_OP)
+    while (nextToken == MULT_OP || nextToken == DIV_OP || nextToken == MOD_OP)
     {
         lex();
         factor();
     }
-    printf("Exit <term>\n");
+    // printf("Exit <term>\n");
 } /* End of function term */
 
 /* factor
@@ -231,14 +278,21 @@ void factor()
         {
             // lex();
             expr();
-            if (nextToken == CLOSE_PAREN) lex();
-            else error();
+            if (nextToken == CLOSE_PAREN)
+                lex();
+            else
+                error();
+            // return;
         }
-        else error();
+        else
+            error();
+        // return;
     }
 }
 
 static void error()
 {
-    printf("Error (more is desired, but not implemented).\n");
+    char *token = tokenName(nextToken);
+    printf("Error encounter on line %d. The next lexeme was %s and the next token was %c\n", line + 1, lexeme, token);
+    exit(1);
 }

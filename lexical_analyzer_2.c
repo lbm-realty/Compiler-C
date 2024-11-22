@@ -10,10 +10,11 @@ int nextToken;
 char secondChar;
 
 static int charClass;
-static char lexeme[100];
+char lexeme[100];
 static char nextChar;
 static int lexLen;
 static FILE *in_fp;
+int line = 0;
 
 static void addChar(char c);
 static void getChar();
@@ -23,20 +24,29 @@ int verifyString();
 int main(int argc, char *argv[])
 {
     printf("Cooke Analyzer :: R11828317\n");
-    if ((in_fp = fopen(argv[1], "r")) == NULL)
+        if (argc < 2) {
+        printf("ERROR - No file was provided\n");
+        return 2; // Exit code for no file provided
+    }
+    in_fp = fopen(argv[1], "r");
+    if (in_fp == NULL)
     {
         printf("ERROR - The file %s couldn't be opened \n", argv[1]);
+        return 3;
     }
+    // else if (argv[1] == NULL) {
+    //     printf("No file was provided\n");
+    //     return 2;
+    // }
     else
     {
         getChar();
         do
         {
             lex();
-            start();
+            success();
         } while (nextToken != EOF);
     }
-
     return 0;
 }
 
@@ -194,6 +204,8 @@ static void getNonBlank()
 {
     while (isspace(nextChar))
     {
+        if (nextChar == '\n')
+            line++;
         getChar();
     }
 }
